@@ -3,8 +3,6 @@ import { subscribeOnStream, unsubscribeFromStream } from "./streaming.js";
 
 const lastBarsCache = new Map();
 
-console.log("__bar", lastBarsCache);
-
 const configurationData = {
   supported_resolutions: ["1D", "1W", "1M"],
   exchanges: [
@@ -66,6 +64,7 @@ async function getAllSymbols() {
   return allSymbols;
 }
 
+/* eslint import/no-anonymous-default-export:*/
 export default {
   onReady: (callback) => {
     console.log("[onReady]: Method call");
@@ -160,9 +159,6 @@ export default {
         return;
       }
       let bars = [];
-      console.log("___from", from);
-      console.log("___to", to);
-      console.log("___data", data);
       data.forEach((bar) => {
         if (
           new Date(bar.time).getTime() >= from * 1000 &&
