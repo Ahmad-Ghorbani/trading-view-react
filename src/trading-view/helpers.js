@@ -1,7 +1,7 @@
 // Make requests to CryptoCompare API
 export async function makeApiRequest(path) {
   try {
-    const response = await fetch(path);
+    const response = await fetch(`https://min-api.cryptocompare.com/${path}`);
     return response.json();
   } catch (error) {
     throw new Error(`CryptoCompare request error: ${error.status}`);

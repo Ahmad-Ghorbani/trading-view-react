@@ -34,14 +34,12 @@ const configurationData = {
 };
 
 async function getAllSymbols() {
-  console.log("__allSymbols");
-  const data = await makeApiRequest(
-    "https://min-api.cryptocompare.com/data/v3/all/exchanges"
-  );
+  const data = await makeApiRequest("data/v3/all/exchanges");
   let allSymbols = [];
-  console.log("___this", data);
+
   for (const exchange of configurationData.exchanges) {
     const pairs = data.Data[exchange.value].pairs;
+
     for (const leftPairPart of Object.keys(pairs)) {
       const symbols = pairs[leftPairPart].map((rightPairPart) => {
         const symbol = generateSymbol(
@@ -60,11 +58,9 @@ async function getAllSymbols() {
       allSymbols = [...allSymbols, ...symbols];
     }
   }
-
   return allSymbols;
 }
 
-/* eslint import/no-anonymous-default-export:*/
 export default {
   onReady: (callback) => {
     console.log("[onReady]: Method call");
@@ -146,12 +142,11 @@ export default {
       .map((name) => `${name}=${encodeURIComponent(urlParameters[name])}`)
       .join("&");
     try {
-      const reverseData = await makeApiRequest(
-        "https://api.coinnikmarket.xyz/v1/price/day-history?pair=ADA%2FTMN&limit=500"
-      );
-      const data = reverseData.reverse();
-      console.log("__here", data);
-      if ((data.Response && data.Response === "Error") || data.length === 0) {
+      const data = await makeApiRequest(`data/histoday?${query}`);
+      if (
+        (data.Response && data.Response === "Error") ||
+        data.Data.length === 0
+      ) {
         // "noData" should be set if there is no data in the requested period.
         onHistoryCallback([], {
           noData: true,
@@ -159,24 +154,20 @@ export default {
         return;
       }
       let bars = [];
-      data.forEach((bar) => {
-        if (
-          new Date(bar.time).getTime() >= from * 1000 &&
-          new Date(bar.time).getTime() < to * 1000
-        ) {
+      data.Data.forEach((bar) => {
+        if (bar.time >= from && bar.time < to) {
           bars = [
             ...bars,
             {
-              time: new Date(bar.time).getTime(),
-              low: bar.l,
-              high: bar.h,
-              open: bar.o,
-              close: bar.c,
+              time: bar.time * 1000,
+              low: bar.low,
+              high: bar.high,
+              open: bar.open,
+              close: bar.close,
             },
           ];
         }
       });
-      console.log("___bars", bars);
       if (firstDataRequest) {
         lastBarsCache.set(symbolInfo.full_name, {
           ...bars[bars.length - 1],
@@ -186,6 +177,7 @@ export default {
       onHistoryCallback(bars, {
         noData: false,
       });
+      return;
     } catch (error) {
       console.log("[getBars]: Get error", error);
       onErrorCallback(error);
