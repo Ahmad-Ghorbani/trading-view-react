@@ -383,7 +383,6 @@ const TradingView = (function (e) {
           n.addEventListener("load", t, !1);
         })),
         this._innerWindowLoaded.then(() => {
-          console.log("innewWindow", this._innerWindow.widgetReady);
           this._innerWindow().widgetReady(() => {
             this._ready = !0;
             for (const e of this._readyHandlers)
