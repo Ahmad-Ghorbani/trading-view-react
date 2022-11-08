@@ -1,28 +1,42 @@
 import { parseFullSymbol } from "./helpers.js";
+import { io } from "socket.io-client";
 
+const socket = io("wss://streamer.cryptocompare.com");
 const channelToSubscription = new Map();
 
-const ws = new WebSocket(
-  "wss://ws.coinnikmarket.xyz/socket.io/?pairName=ADA%2FTMN&lang=fa&EIO=3&transport=websocket"
-);
+socket.on("connect", () => {
+  console.log("[socket] Connected");
+});
 
-ws.onopen = (event) => {
-  console.log("[new socket]: socket opened");
-};
+socket.on("disconnect", (reason) => {
+  console.log("[socket] Disconnected:", reason);
+});
 
-ws.onmessage = function (event) {
-  const bracketIndex = event.data.indexOf("[");
-  const editedData = JSON.parse(
-    event.data.substring(bracketIndex, event.data.length)
-  );
+socket.on("error", (error) => {
+  console.log("[socket] Error:", error);
+});
 
-  if (editedData[0] !== "ADA/TMN_trade") {
+socket.on("m", (data) => {
+  console.log("[socket] Message:", data);
+  const [
+    eventTypeStr,
+    exchange,
+    fromSymbol,
+    toSymbol,
+    ,
+    ,
+    tradeTimeStr,
+    ,
+    tradePriceStr,
+  ] = data.split("~");
+
+  if (parseInt(eventTypeStr) !== 0) {
     // skip all non-TRADE events
     return;
   }
-  const tradePrice = parseFloat(editedData[1][0].price);
-  const tradeTime = parseInt(new Date(editedData[1][0].timestamp).getTime());
-  const channelString = `0~Bitfinex~BTC~USD`;
+  const tradePrice = parseFloat(tradePriceStr);
+  const tradeTime = parseInt(tradeTimeStr);
+  const channelString = `0~${exchange}~${fromSymbol}~${toSymbol}`;
   const subscriptionItem = channelToSubscription.get(channelString);
   if (subscriptionItem === undefined) {
     return;
@@ -31,7 +45,7 @@ ws.onmessage = function (event) {
   const nextDailyBarTime = getNextDailyBarTime(lastDailyBar.time);
 
   let bar;
-  if (tradeTime >= nextDailyBarTime * 1000) {
+  if (tradeTime >= nextDailyBarTime) {
     bar = {
       time: nextDailyBarTime,
       open: tradePrice,
@@ -53,7 +67,7 @@ ws.onmessage = function (event) {
 
   // send data to every subscriber of that symbol
   subscriptionItem.handlers.forEach((handler) => handler.callback(bar));
-};
+});
 
 function getNextDailyBarTime(barTime) {
   const date = new Date(barTime * 1000);
@@ -92,7 +106,7 @@ export function subscribeOnStream(
     "[subscribeBars]: Subscribe to streaming. Channel:",
     channelString
   );
-  ws.emit("SubAdd", { subs: [channelString] });
+  socket.emit("SubAdd", { subs: [channelString] });
 }
 
 export function unsubscribeFromStream(subscriberUID) {
@@ -113,7 +127,7 @@ export function unsubscribeFromStream(subscriberUID) {
           "[unsubscribeBars]: Unsubscribe from streaming. Channel:",
           channelString
         );
-        ws.emit("SubRemove", { subs: [channelString] });
+        socket.emit("SubRemove", { subs: [channelString] });
         channelToSubscription.delete(channelString);
         break;
       }
