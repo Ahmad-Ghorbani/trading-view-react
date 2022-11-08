@@ -1,5 +1,4 @@
 /* eslint-disable */
-console.log("___rrrr");
 (window.webpackJsonp = window.webpackJsonp || []).push([
   ["library"],
   {
@@ -59377,7 +59376,6 @@ console.log("___rrrr");
           let a = !1;
           const c = s / 1e3,
             h = i / 1e3;
-          console.log("_________this", this);
           this._datafeed.getBars(
             this._symbolInfo,
             this._resolution,

@@ -1,5 +1,4 @@
 const TradingView = (function (e) {
-  console.log("___rrrr");
   // eslint-disable-next-line no-unused-expressions
   ("use strict");
   function t(e, i) {
